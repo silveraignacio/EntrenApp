@@ -1,0 +1,79 @@
+:root{
+  --bg:#0f172a; --card:#1e293b; --card2:#273449; --line:#334155;
+  --txt:#e2e8f0; --dim:#94a3b8; --acc:#38bdf8; --acc2:#0ea5e9;
+  --ok:#34d399; --grp:#f472b6;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  background:var(--bg); color:var(--txt);
+  -webkit-text-size-adjust:100%; padding-bottom:env(safe-area-inset-bottom);
+}
+header{
+  position:sticky; top:0; z-index:10; background:var(--bg);
+  padding:14px 16px 8px; border-bottom:1px solid var(--line);
+  padding-top:calc(14px + env(safe-area-inset-top));
+}
+h1{margin:0 0 10px; font-size:22px}
+nav{display:flex; gap:8px}
+.tab{
+  flex:1; padding:9px; border:1px solid var(--line); background:var(--card);
+  color:var(--dim); border-radius:10px; font-size:15px; font-weight:600; cursor:pointer;
+}
+.tab.active{background:var(--acc); color:#04222f; border-color:var(--acc)}
+main{padding:14px 16px 60px; max-width:720px; margin:0 auto}
+.view{display:none} .view.active{display:block}
+.card{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px; margin-bottom:14px}
+.gen-row{display:flex; gap:10px; align-items:flex-end}
+label{display:flex; flex-direction:column; font-size:13px; color:var(--dim); gap:5px; font-weight:600}
+select,input{
+  font-size:16px; padding:9px 10px; border-radius:10px; border:1px solid var(--line);
+  background:var(--card2); color:var(--txt);
+}
+button{font-family:inherit}
+.primary{
+  flex:1; padding:11px; border:none; border-radius:10px; background:var(--acc);
+  color:#04222f; font-weight:700; font-size:15px; cursor:pointer;
+}
+.primary:active{background:var(--acc2)}
+.hint{color:var(--dim); font-size:13px; margin:10px 0 0; line-height:1.4}
+
+.day-title{font-size:17px; margin:22px 0 10px; display:flex; align-items:center; gap:8px}
+.day-title span{background:var(--acc); color:#04222f; border-radius:8px; padding:2px 9px; font-size:14px; font-weight:700}
+
+.ex{border-top:1px solid var(--line); padding:13px 0}
+.ex:first-child{border-top:none; padding-top:2px}
+.ex-head{display:flex; justify-content:space-between; gap:10px; align-items:baseline}
+.ex-name{font-weight:600; font-size:15px; text-transform:capitalize; line-height:1.3}
+.ex-meta{margin:5px 0 0; display:flex; gap:6px; flex-wrap:wrap}
+.badge{font-size:11px; padding:2px 8px; border-radius:20px; background:var(--card2); color:var(--dim); border:1px solid var(--line)}
+.badge.grp{color:var(--grp); border-color:#4a2a3a}
+.scheme{color:var(--acc); font-weight:600; font-size:13px; white-space:nowrap}
+.last{font-size:12px; color:var(--ok); margin:6px 0 0; min-height:15px}
+
+.log{display:flex; gap:7px; margin-top:9px; align-items:center; flex-wrap:wrap}
+.log input{width:74px}
+.log .save{padding:9px 14px; border:none; border-radius:10px; background:var(--card2); color:var(--acc); font-weight:700; cursor:pointer; border:1px solid var(--line)}
+.log .save:active{background:var(--acc); color:#04222f}
+.linkbtn{background:none; border:none; color:var(--acc); font-size:13px; cursor:pointer; padding:6px 0; text-decoration:underline}
+.gif{margin-top:10px; max-width:180px; width:100%; border-radius:10px; display:block; background:#000}
+.ins{font-size:13px; color:var(--dim); line-height:1.45; margin:8px 0 0}
+
+.empty{color:var(--dim); text-align:center; padding:40px 10px; line-height:1.5}
+.hgroup{margin-bottom:12px}
+.hname{font-weight:600; text-transform:capitalize; font-size:15px; margin-bottom:6px}
+.hrow{display:flex; justify-content:space-between; font-size:13px; color:var(--dim); padding:4px 0; border-top:1px dashed var(--line)}
+.hrow b{color:var(--txt)}
+.spark{display:flex; align-items:flex-end; gap:3px; height:34px; margin:6px 0}
+.spark i{flex:1; background:var(--acc); border-radius:2px 2px 0 0; min-height:3px; opacity:.85}
+.pr{color:var(--ok); font-weight:700}
+
+.toast{
+  position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px);
+  background:var(--ok); color:#04231a; padding:10px 18px; border-radius:24px; font-weight:700;
+  font-size:14px; opacity:0; pointer-events:none; transition:.25s; z-index:50;
+}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+.subtle{color:var(--dim); font-size:12px; text-align:center; margin-top:24px; line-height:1.5}
+.subtle a{color:var(--acc)}

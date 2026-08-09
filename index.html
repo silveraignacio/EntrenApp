@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <title>Rutina Full Body</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏋️</text></svg>">
+</head>
+<body>
+  <header>
+    <h1>🏋️ Full Body</h1>
+    <nav>
+      <button class="tab active" data-view="rutina">Rutina</button>
+      <button class="tab" data-view="sesiones">Sesiones</button>
+      <button class="tab" data-view="analisis">Análisis</button>
+      <button class="tab" data-view="historico">Histórico</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ===== RUTINA ===== -->
+    <section id="view-rutina" class="view active">
+      <div class="gen card">
+        <div class="gen-row">
+          <label>Días por semana
+            <select id="days">
+              <option value="2">2 días</option>
+              <option value="3" selected>3 días</option>
+            </select>
+          </label>
+          <button id="generate" class="primary">Generar rutina</button>
+        </div>
+        <p class="hint">Rutina full body: cada día trabaja todo el cuerpo con ejercicios distintos. Pulsa <b>Generar</b> cuantas veces quieras para cambiarlos.</p>
+      </div>
+      <div id="routine"></div>
+    </section>
+
+    <!-- ===== SESIONES ===== -->
+    <section id="view-sesiones" class="view">
+      <div class="gen card">
+        <div class="gen-row">
+          <label>Fecha
+            <input type="date" id="session-date">
+          </label>
+        </div>
+        <p class="hint">Registra qué ejercicios hiciste hoy. Selecciona de la rutina o de tu histórico.</p>
+      </div>
+      <div id="session-form"></div>
+      <button id="session-save" class="primary">Guardar sesión</button>
+      <div id="sessions-list"></div>
+    </section>
+
+    <!-- ===== ANÁLISIS ===== -->
+    <section id="view-analisis" class="view">
+      <div id="analysis"></div>
+    </section>
+
+    <!-- ===== HISTORICO ===== -->
+    <section id="view-historico" class="view">
+      <div id="history"></div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

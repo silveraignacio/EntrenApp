@@ -245,16 +245,52 @@
     if (!dates.length) { elSessionsList.innerHTML = '<p class="empty">Aún no registraste sesiones.</p>'; return; }
     var html = '';
     dates.slice(0, 10).forEach(function (d) {
-      html += '<div class="card" style="margin-top: 14px;"><div style="font-weight: 600; font-size: 14px; margin-bottom: 8px;">' + d + '</div>';
-      sessions[d].forEach(function (ex) {
+      html += '<div class="card" style="margin-top: 14px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">' +
+        '<div style="font-weight: 600; font-size: 14px;">' + d + '</div>' +
+        '<button class="session-delete-btn" data-date="' + d + '" style="background: none; border: none; color: var(--dim); cursor: pointer; font-size: 14px; padding: 4px 8px;">🗑️</button>' +
+        '</div>';
+      sessions[d].forEach(function (ex, idx) {
         var e = byId[ex.id];
         if (!e) return;
-        html += '<div style="font-size: 13px; padding: 4px 0; color: var(--dim);">' + esc(e.displayName) +
-          ' <b style="color: var(--txt);">' + fmtW(ex.w) + ' × ' + (ex.r || '-') + '</b></div>';
+        html += '<div style="font-size: 13px; padding: 8px; background: var(--bg); border-radius: 6px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">' +
+          '<div><span style="color: var(--txt);">' + esc(e.displayName) + '</span> <b style="color: var(--acc);">' + fmtW(ex.w) + ' × ' + (ex.r || '-') + '</b></div>' +
+          '<button class="exercise-edit-btn" data-date="' + d + '" data-index="' + idx + '" style="background: none; border: none; color: var(--dim); cursor: pointer; font-size: 12px; padding: 0 6px;">✏️</button>' +
+          '</div>';
       });
       html += '</div>';
     });
     elSessionsList.innerHTML = html;
+
+    document.querySelectorAll(".session-delete-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var date = this.dataset.date;
+        if (confirm("¿Eliminar toda la sesión del " + date + "?")) {
+          var sessions = getSessions();
+          delete sessions[date];
+          save(K_SESSIONS, sessions);
+          toast("Sesión eliminada");
+          renderSessionsList();
+        }
+      });
+    });
+
+    document.querySelectorAll(".exercise-edit-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var date = this.dataset.date;
+        var idx = parseInt(this.dataset.index, 10);
+        var sessions = getSessions();
+        var ex = sessions[date][idx];
+        var e = byId[ex.id];
+        var newW = prompt("Peso (kg) para " + e.displayName + ":", ex.w || "");
+        if (newW !== null) {
+          var newR = prompt("Reps:", ex.r || "");
+          sessions[date][idx] = { id: ex.id, w: isNaN(parseFloat(newW)) ? null : parseFloat(newW), r: isNaN(parseInt(newR, 10)) ? null : parseInt(newR, 10) };
+          save(K_SESSIONS, sessions);
+          toast("Ejercicio modificado");
+          renderSessionsList();
+        }
+      });
+    });
   }
 
   // --- render análisis ---

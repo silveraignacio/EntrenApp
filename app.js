@@ -14,7 +14,31 @@
   function save(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
 
   var byId = {};
-  EX.forEach(function (e) { byId[e.id] = e; });
+  var translations = {
+    'chest': 'pecho', 'flat': 'plano', 'incline': 'inclinado', 'decline': 'declinado',
+    'dumbbell': 'mancuerna', 'barbell': 'barra', 'machine': 'máquina', 'cable': 'polea',
+    'press': 'press', 'fly': 'volada', 'flye': 'volada', 'pullover': 'pullover',
+    'back': 'espalda', 'row': 'remo', 'pull': 'jalón', 'pulldown': 'jalón',
+    'shoulder': 'hombro', 'raise': 'levantamiento', 'lateral': 'lateral', 'front': 'frontal',
+    'bicep': 'bíceps', 'curl': 'curl', 'tricep': 'tríceps', 'extension': 'extensión',
+    'leg': 'pierna', 'press': 'press', 'squat': 'sentadilla', 'lunge': 'estocada',
+    'deadlift': 'peso muerto', 'hack': 'hack', 'extension': 'extensión', 'curl': 'curl',
+    'calf': 'gemelo', 'raise': 'levantamiento', 'crunch': 'crunch', 'sit': 'sit up',
+    'core': 'core', 'ab': 'abdominal', 'plank': 'plancha', 'hollow': 'hueca'
+  };
+
+  function translateEx(name) {
+    var lower = name.toLowerCase();
+    var words = lower.split(' ');
+    return words.map(function (w) {
+      return translations[w] || w;
+    }).join(' ').replace(/^\w/, function (c) { return c.toUpperCase(); });
+  }
+
+  EX.forEach(function (e) {
+    byId[e.id] = e;
+    e.displayName = translateEx(e.name);
+  });
 
   // --- estructura del día full body ---
   var TEMPLATE = ["piernas", "piernas", "pecho", "espalda", "hombros", "biceps", "triceps", "core"];
@@ -168,16 +192,21 @@
           '<div class="accordion-content" id="' + uid + '" style="display: none; padding: 12px; background: var(--bg);">';
 
         grouped[grp].forEach(function (ex) {
-          html += '<div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--line);">' +
+          html += '<div class="session-ex-item" style="margin-bottom: 12px; padding: 10px; background: var(--card2); border-radius: 8px; border: 1px solid var(--line);" data-ex-id="' + ex.id + '">' +
             '<label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-weight: 400; margin: 0 0 8px;">' +
             '<input type="checkbox" class="ex-checkbox" value="' + ex.id + '" style="margin-top: 4px;">' +
-            '<div style="flex: 1;"><div style="font-size: 13px; color: var(--txt);">' + esc(ex.name) + '</div>' +
+            '<div style="flex: 1;"><div style="font-size: 13px; color: var(--txt); font-weight: 500;">' + esc(ex.displayName) + '</div>' +
             '<div style="font-size: 11px; color: var(--dim); margin-top: 2px;">' + esc(ex.eq) + '</div></div></label>';
 
           if (ex.gif) {
-            html += '<img loading="lazy" src="' + GIF_BASE + ex.gif + '" alt="" style="width: 100%; max-width: 120px; height: 80px; object-fit: cover; border-radius: 6px; background: #000; margin-left: 26px;">';
+            html += '<img loading="lazy" src="' + GIF_BASE + ex.gif + '" alt="" style="width: 100%; max-width: 120px; height: 80px; object-fit: cover; border-radius: 6px; background: #000; margin-bottom: 8px;">';
           }
-          html += '</div>';
+
+          html += '<div class="ex-inputs" style="display: none; gap: 8px; flex-wrap: wrap;">' +
+            '<input type="number" class="session-w" inputmode="decimal" placeholder="kg" style="flex: 1; min-width: 60px; padding: 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--txt); font-size: 13px;">' +
+            '<input type="number" class="session-r" inputmode="numeric" placeholder="reps" style="flex: 1; min-width: 60px; padding: 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--txt); font-size: 13px;">' +
+            '</div>' +
+            '</div>';
         });
 
         html += '</div></div>';
@@ -192,6 +221,14 @@
           var isOpen = target.style.display !== "none";
           target.style.display = isOpen ? "none" : "block";
           toggle.textContent = isOpen ? "▶" : "▼";
+        });
+      });
+
+      document.querySelectorAll(".ex-checkbox").forEach(function (cb) {
+        cb.addEventListener("change", function () {
+          var item = this.closest(".session-ex-item");
+          var inputs = item.querySelector(".ex-inputs");
+          inputs.style.display = this.checked ? "flex" : "none";
         });
       });
     };
@@ -212,7 +249,7 @@
       sessions[d].forEach(function (ex) {
         var e = byId[ex.id];
         if (!e) return;
-        html += '<div style="font-size: 13px; padding: 4px 0; color: var(--dim);">' + esc(e.name) +
+        html += '<div style="font-size: 13px; padding: 4px 0; color: var(--dim);">' + esc(e.displayName) +
           ' <b style="color: var(--txt);">' + fmtW(ex.w) + ' × ' + (ex.r || '-') + '</b></div>';
       });
       html += '</div>';
@@ -343,12 +380,17 @@
     var sessions = getSessions();
     sessions[date] = [];
     checkboxes.forEach(function (cb) {
-      sessions[date].push({ id: cb.value, w: null, r: null });
+      var item = cb.closest(".session-ex-item");
+      var w = parseFloat(item.querySelector(".session-w").value);
+      var r = parseInt(item.querySelector(".session-r").value, 10);
+      sessions[date].push({ id: cb.value, w: isNaN(w) ? null : w, r: isNaN(r) ? null : r });
     });
     save(K_SESSIONS, sessions);
     toast("Sesión guardada ✔");
     renderSessionsList();
     document.querySelectorAll(".ex-checkbox").forEach(function (cb) { cb.checked = false; });
+    elSessionForm.innerHTML = '';
+    renderSessionForm();
   });
 
   // --- init ---

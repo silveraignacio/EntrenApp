@@ -139,7 +139,6 @@
   // --- render sesiones ---
   var elSessionForm = document.getElementById("session-form");
   var elSessionsList = document.getElementById("sessions-list");
-  var sessionFilterState = {};
   function renderSessionForm() {
     var today = new Date().toISOString().slice(0, 10);
     document.getElementById("session-date").value = today;
@@ -148,11 +147,10 @@
       '<div id="session-list"></div></div>';
     elSessionForm.innerHTML = html;
 
-    document.getElementById("session-search").addEventListener("input", function (e) {
-      var filter = e.target.value.toLowerCase();
+    var renderAccordions = function (filter) {
       var list = document.getElementById("session-list");
       var grouped = {};
-      var filtered = EX.filter(function (ex) { return ex.name.toLowerCase().includes(filter) || GRP_LABEL[ex.grp].toLowerCase().includes(filter); });
+      var filtered = filter ? EX.filter(function (ex) { return ex.name.toLowerCase().includes(filter.toLowerCase()) || GRP_LABEL[ex.grp].toLowerCase().includes(filter.toLowerCase()); }) : EX;
 
       filtered.forEach(function (e) {
         if (!grouped[e.grp]) grouped[e.grp] = [];
@@ -160,19 +158,49 @@
       });
 
       var html = '';
-      Object.keys(grouped).sort().forEach(function (grp) {
-        html += '<div style="margin-top: 12px;"><div style="font-size: 12px; font-weight: 600; color: var(--acc); margin-bottom: 6px;">' + GRP_LABEL[grp] + '</div>';
-        grouped[grp].forEach(function (ex) {
-          html += '<label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 400; margin: 0 0 6px; font-size: 13px;">' +
-            '<input type="checkbox" class="ex-checkbox" value="' + ex.id + '">' +
-            '<span>' + esc(ex.name) + '</span></label>';
-        });
-        html += '</div>';
-      });
-      list.innerHTML = html || '<p style="color: var(--dim); font-size: 13px;">Sin resultados</p>';
-    });
+      var grpOrder = ['pecho', 'espalda', 'hombros', 'biceps', 'triceps', 'piernas', 'core'];
+      grpOrder.forEach(function (grp) {
+        if (!grouped[grp] || !grouped[grp].length) return;
+        var uid = 'accordion-' + grp;
+        html += '<div class="accordion-item" style="margin-top: 12px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden;">' +
+          '<button class="accordion-header" data-target="' + uid + '" style="width: 100%; padding: 12px; background: var(--card2); border: none; color: var(--acc); font-weight: 600; cursor: pointer; text-align: left; font-size: 14px; display: flex; justify-content: space-between; align-items: center;">' +
+          '<span>' + GRP_LABEL[grp] + '</span><span class="toggle" style="font-size: 12px;">▼</span></button>' +
+          '<div class="accordion-content" id="' + uid + '" style="display: none; padding: 12px; background: var(--bg);">';
 
-    document.getElementById("session-search").dispatchEvent(new Event("input"));
+        grouped[grp].forEach(function (ex) {
+          html += '<div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--line);">' +
+            '<label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-weight: 400; margin: 0 0 8px;">' +
+            '<input type="checkbox" class="ex-checkbox" value="' + ex.id + '" style="margin-top: 4px;">' +
+            '<div style="flex: 1;"><div style="font-size: 13px; color: var(--txt);">' + esc(ex.name) + '</div>' +
+            '<div style="font-size: 11px; color: var(--dim); margin-top: 2px;">' + esc(ex.eq) + '</div></div></label>';
+
+          if (ex.gif) {
+            html += '<img loading="lazy" src="' + GIF_BASE + ex.gif + '" alt="" style="width: 100%; max-width: 120px; height: 80px; object-fit: cover; border-radius: 6px; background: #000; margin-left: 26px;">';
+          }
+          html += '</div>';
+        });
+
+        html += '</div></div>';
+      });
+
+      list.innerHTML = html || '<p style="color: var(--dim); font-size: 13px;">Sin resultados</p>';
+
+      document.querySelectorAll(".accordion-header").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var target = document.getElementById(this.dataset.target);
+          var toggle = this.querySelector(".toggle");
+          var isOpen = target.style.display !== "none";
+          target.style.display = isOpen ? "none" : "block";
+          toggle.textContent = isOpen ? "▶" : "▼";
+        });
+      });
+    };
+
+    renderAccordions("");
+
+    document.getElementById("session-search").addEventListener("input", function (e) {
+      renderAccordions(e.target.value);
+    });
   }
   function renderSessionsList() {
     var sessions = getSessions();

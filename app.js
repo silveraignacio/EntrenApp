@@ -378,19 +378,19 @@
     if (!checkboxes.length) { toast("Selecciona al menos un ejercicio"); return; }
 
     var sessions = getSessions();
-    sessions[date] = [];
+    sessions[date] = sessions[date] || [];
+    var count = 0;
     checkboxes.forEach(function (cb) {
       var item = cb.closest(".session-ex-item");
       var w = parseFloat(item.querySelector(".session-w").value);
       var r = parseInt(item.querySelector(".session-r").value, 10);
       sessions[date].push({ id: cb.value, w: isNaN(w) ? null : w, r: isNaN(r) ? null : r });
+      count++;
     });
     save(K_SESSIONS, sessions);
-    toast("Sesión guardada ✔");
+    toast("Se agregaron " + count + " ejercicio(s) ✔");
     renderSessionsList();
     document.querySelectorAll(".ex-checkbox").forEach(function (cb) { cb.checked = false; });
-    elSessionForm.innerHTML = '';
-    renderSessionForm();
   });
 
   // --- init ---

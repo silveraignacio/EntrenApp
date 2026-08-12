@@ -11,7 +11,24 @@
   var K_DAYS = "gym.days.v1";
   var K_SESSIONS = "gym.sessions.v1";
   function load(k, def) { try { return JSON.parse(localStorage.getItem(k)) || def; } catch (e) { return def; } }
-  function save(k, v) { localStorage.setItem(k, JSON.stringify(v)); }
+  function save(k, v) { localStorage.setItem(k, JSON.stringify(v)); scheduleCloudSync(); }
+
+  // --- sincronización con Firebase (opcional, requiere iniciar sesión) ---
+  var currentUser = null;
+  var cloudSyncTimer = null;
+  function scheduleCloudSync(immediate) {
+    if (!currentUser || !window.fb) return;
+    if (cloudSyncTimer) clearTimeout(cloudSyncTimer);
+    var run = function () {
+      window.fb.saveData(currentUser.uid, {
+        routine: load(K_ROUTINE, null),
+        logs: load(K_LOGS, {}),
+        days: load(K_DAYS, "3"),
+        sessions: load(K_SESSIONS, {})
+      }).catch(function () { toast("No se pudo sincronizar"); });
+    };
+    if (immediate) run(); else cloudSyncTimer = setTimeout(run, 800);
+  }
 
   var byId = {};
   var translations = {
@@ -436,6 +453,78 @@
     toast("Se agregaron " + count + " ejercicio(s) ✔");
     renderSessionsList();
     document.querySelectorAll(".ex-checkbox").forEach(function (cb) { cb.checked = false; });
+  });
+
+  // --- autenticación / sincronización en la nube ---
+  function updateAuthUI() {
+    var status = document.getElementById("auth-status");
+    var btn = document.getElementById("auth-btn");
+    if (currentUser) {
+      status.textContent = currentUser.email;
+      btn.textContent = "Cerrar sesión";
+    } else {
+      status.textContent = "Invitado (sin sincronizar)";
+      btn.textContent = "Iniciar sesión";
+    }
+  }
+
+  function refreshAllViews() {
+    daysSel.value = load(K_DAYS, "3");
+    renderRoutine();
+    renderSessionsList();
+    renderHistory();
+    renderAnalysis();
+  }
+
+  function handleAuthChange(user) {
+    currentUser = user;
+    updateAuthUI();
+    if (!user) return;
+    window.fb.loadData(user.uid).then(function (cloudData) {
+      if (cloudData) {
+        if (cloudData.routine) save(K_ROUTINE, cloudData.routine);
+        if (cloudData.logs) save(K_LOGS, cloudData.logs);
+        if (cloudData.days) save(K_DAYS, cloudData.days);
+        if (cloudData.sessions) save(K_SESSIONS, cloudData.sessions);
+        refreshAllViews();
+        toast("Datos sincronizados ☁️");
+      } else {
+        scheduleCloudSync(true);
+      }
+    }).catch(function () { toast("No se pudo cargar la nube"); });
+  }
+
+  if (window.fb) { window.fb.onAuthChange(handleAuthChange); }
+  else { window.addEventListener("fb-ready", function () { window.fb.onAuthChange(handleAuthChange); }); }
+
+  document.getElementById("auth-btn").addEventListener("click", function () {
+    if (currentUser) {
+      window.fb.signOut();
+      toast("Sesión cerrada");
+    } else {
+      document.getElementById("auth-modal").style.display = "flex";
+    }
+  });
+  document.getElementById("auth-close").addEventListener("click", function () {
+    document.getElementById("auth-modal").style.display = "none";
+  });
+  document.getElementById("auth-signin").addEventListener("click", function () {
+    var email = document.getElementById("auth-email").value;
+    var pw = document.getElementById("auth-password").value;
+    if (!email || !pw) { toast("Completa email y contraseña"); return; }
+    window.fb.signIn(email, pw).then(function () {
+      document.getElementById("auth-modal").style.display = "none";
+      toast("Sesión iniciada ✔");
+    }).catch(function (e) { toast("Error: " + e.message); });
+  });
+  document.getElementById("auth-signup").addEventListener("click", function () {
+    var email = document.getElementById("auth-email").value;
+    var pw = document.getElementById("auth-password").value;
+    if (!email || !pw) { toast("Completa email y contraseña"); return; }
+    window.fb.signUp(email, pw).then(function () {
+      document.getElementById("auth-modal").style.display = "none";
+      toast("Cuenta creada ✔");
+    }).catch(function (e) { toast("Error: " + e.message); });
   });
 
   // --- init ---

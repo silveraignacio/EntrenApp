@@ -77,3 +77,9 @@ button{font-family:inherit}
 .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
 .subtle{color:var(--dim); font-size:12px; text-align:center; margin-top:24px; line-height:1.5}
 .subtle a{color:var(--acc)}
+
+.modal-overlay{
+  position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:100;
+  display:flex; align-items:center; justify-content:center; padding:20px;
+}
+.modal-card{width:100%; max-width:340px; margin:0}

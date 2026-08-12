@@ -396,6 +396,15 @@
       var r = parseInt(exEl.querySelector(".r").value, 10);
       if (isNaN(w)) { toast("Escribe el peso"); return; }
       addLog(id, w, isNaN(r) ? null : r);
+      // También agregarlo a sesión de hoy
+      var today = new Date().toISOString().slice(0, 10);
+      var sessions = getSessions();
+      sessions[today] = sessions[today] || [];
+      var exists = sessions[today].find(function (ex) { return ex.id === id; });
+      if (!exists) {
+        sessions[today].push({ id: id, w: w, r: isNaN(r) ? null : r });
+        save(K_SESSIONS, sessions);
+      }
       exEl.querySelector(".last").textContent = "Última vez: " + fmtW(w) + " × " + (isNaN(r) ? "-" : r) + " reps · hoy";
       toast("Guardado ✔");
     } else if (ev.target.classList.contains("togif")) {

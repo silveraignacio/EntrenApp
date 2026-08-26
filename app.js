@@ -68,6 +68,10 @@
     biceps: "Bíceps", triceps: "Tríceps", core: "Core"
   };
 
+  // Plan fijo Superior/Piernas: mismos ejercicios cada semana, para medir progreso real.
+  var FIXED_SUPERIOR = ["0025", "3545", "0818", "0180", "0869", "0178", "0391", "0186"];
+  var FIXED_PIERNAS = ["0770", "0739", "0585", "0586", "0597", "0598", "0594", "0175"];
+
   function pools() {
     var p = {};
     EX.forEach(function (e) { (p[e.grp] = p[e.grp] || []).push(e); });
@@ -91,9 +95,21 @@
     });
     var days = [];
     for (var d = 0; d < nDays; d++) {
-      days.push({ name: "Día " + (d + 1), items: TEMPLATE.map(function (g) { return queues[g].shift().id; }) });
+      days.push({ name: "Día " + (d + 1), label: "Full body", items: TEMPLATE.map(function (g) { return queues[g].shift().id; }) });
     }
     return { days: days, createdAt: new Date().toISOString() };
+  }
+
+  // Genera N días fijos alternando Superior / Piernas (mismos ejercicios siempre).
+  function generateFixed(nDays) {
+    var seq = [FIXED_SUPERIOR, FIXED_PIERNAS];
+    var labels = ["Superior", "Piernas"];
+    var days = [];
+    for (var d = 0; d < nDays; d++) {
+      var idx = d % 2;
+      days.push({ name: "Día " + (d + 1), label: labels[idx], items: seq[idx].slice() });
+    }
+    return { days: days, createdAt: new Date().toISOString(), fixed: true };
   }
 
   // --- registro de pesos ---
@@ -153,12 +169,12 @@
     if (!r) { elRoutine.innerHTML = '<p class="empty">Elige los días y pulsa <b>Generar rutina</b> para empezar 💪</p>'; return; }
     var html = "";
     r.days.forEach(function (day) {
-      html += '<h2 class="day-title"><span>' + day.name + "</span> Full body</h2><div class='card'>";
+      html += '<h2 class="day-title"><span>' + day.name + "</span> " + esc(day.label || "Full body") + "</h2><div class='card'>";
       day.items.forEach(function (id) {
         var e = byId[id]; if (!e) return;
         var last = lastLog(id);
         html += '<div class="ex" data-id="' + id + '">' +
-          '<div class="ex-head"><div><div class="ex-name">' + esc(e.name) + '</div>' +
+          '<div class="ex-head"><div><div class="ex-name">' + esc(e.displayName) + '</div>' +
           '<div class="ex-meta"><span class="badge grp">' + GRP_LABEL[e.grp] + '</span>' +
           '<span class="badge">' + esc(e.eq) + '</span></div></div>' +
           '<div class="scheme">' + SCHEME[e.grp] + '</div></div>' +
@@ -398,10 +414,23 @@
   daysSel.value = load(K_DAYS, "3");
   daysSel.addEventListener("change", function () { save(K_DAYS, daysSel.value); });
 
+  var K_FIXED = "gym.fixedplan.v1";
+  var fixedChk = document.getElementById("fixed-plan");
+  var routineHint = document.getElementById("routine-hint");
+  fixedChk.checked = load(K_FIXED, false);
+  function updateRoutineHint() {
+    routineHint.innerHTML = fixedChk.checked
+      ? "Plan fijo: alterna <b>Día Superior</b> (pecho, espalda, hombros, brazos) y <b>Día Piernas</b> (cuádriceps, femoral, abductor/aductor, gemelos). Repite estos mismos ejercicios cada semana para comparar tu progreso real."
+      : "Rutina full body: cada día trabaja todo el cuerpo con ejercicios distintos. Pulsa <b>Generar</b> cuantas veces quieras para cambiarlos.";
+  }
+  updateRoutineHint();
+  fixedChk.addEventListener("change", function () { save(K_FIXED, fixedChk.checked); updateRoutineHint(); });
+
   document.getElementById("generate").addEventListener("click", function () {
-    save(K_ROUTINE, generate(parseInt(daysSel.value, 10)));
+    var nDays = parseInt(daysSel.value, 10);
+    save(K_ROUTINE, fixedChk.checked ? generateFixed(nDays) : generate(nDays));
     renderRoutine();
-    toast("Rutina generada 💪");
+    toast(fixedChk.checked ? "Plan fijo generado 💪" : "Rutina generada 💪");
     window.scrollTo({ top: 0, behavior: "smooth" });
   });
 

@@ -50,9 +50,13 @@
               <option value="6">6 días</option>
             </select>
           </label>
-          <button id="generate" class="primary">Generar rutina</button>
         </div>
-        <p class="hint">Rutina full body: cada día trabaja todo el cuerpo con ejercicios distintos. Pulsa <b>Generar</b> cuantas veces quieras para cambiarlos.</p>
+        <label style="flex-direction:row; align-items:center; gap:8px; cursor:pointer; margin-top:10px;">
+          <input type="checkbox" id="fixed-plan">
+          <span>Plan fijo Superior / Piernas (mismos ejercicios cada semana, ideal para 4 semanas)</span>
+        </label>
+        <button id="generate" class="primary">Generar rutina</button>
+        <p class="hint" id="routine-hint">Rutina full body: cada día trabaja todo el cuerpo con ejercicios distintos. Pulsa <b>Generar</b> cuantas veces quieras para cambiarlos.</p>
       </div>
       <div id="routine"></div>
     </section>

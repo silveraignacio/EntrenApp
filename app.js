@@ -6,9 +6,7 @@
   var GIF_BASE = "https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/main/videos/";
 
   // --- almacenamiento ---
-  var K_ROUTINE = "gym.routine.v1";
   var K_LOGS = "gym.logs.v1";
-  var K_DAYS = "gym.days.v1";
   var K_SESSIONS = "gym.sessions.v1";
   function load(k, def) { try { return JSON.parse(localStorage.getItem(k)) || def; } catch (e) { return def; } }
   function save(k, v) { localStorage.setItem(k, JSON.stringify(v)); scheduleCloudSync(); }
@@ -21,9 +19,7 @@
     if (cloudSyncTimer) clearTimeout(cloudSyncTimer);
     var run = function () {
       window.fb.saveData(currentUser.uid, {
-        routine: load(K_ROUTINE, null),
         logs: load(K_LOGS, {}),
-        days: load(K_DAYS, "3"),
         sessions: load(K_SESSIONS, {})
       }).catch(function () { toast("No se pudo sincronizar"); });
     };
@@ -57,59 +53,36 @@
     e.displayName = translateEx(e.name);
   });
 
-  // --- estructura del día full body ---
-  var TEMPLATE = ["piernas", "piernas", "pecho", "espalda", "hombros", "biceps", "triceps", "core"];
-  var SCHEME = {
-    piernas: "4 × 8-12", pecho: "4 × 8-12", espalda: "4 × 8-12",
-    hombros: "4 × 10-12", biceps: "3 × 10-15", triceps: "3 × 10-15", core: "3 × 15-20"
-  };
   var GRP_LABEL = {
     piernas: "Piernas", pecho: "Pecho", espalda: "Espalda", hombros: "Hombros",
     biceps: "Bíceps", triceps: "Tríceps", core: "Core"
   };
 
-  // Plan fijo Superior/Piernas: mismos ejercicios cada semana, para medir progreso real.
-  var FIXED_SUPERIOR = ["0025", "3545", "0818", "0180", "0869", "0178", "0391", "0186"];
-  var FIXED_PIERNAS = ["0770", "0739", "0585", "0586", "0597", "0598", "0594", "0175"];
+  // Rutina fija de 4 semanas: Superior / Piernas, siempre los mismos ejercicios.
+  var PLAN_SUPERIOR = [
+    { id: "0025", scheme: "4 × 6-10", rest: "2-3 min" },
+    { id: "0818", scheme: "4 × 8-12", rest: "2-3 min" },
+    { id: "3545", scheme: "3 × 8-12", rest: "90 s" },
+    { id: "0180", scheme: "3 × 8-12", rest: "90 s" },
+    { id: "0869", scheme: "3 × 8-12", rest: "90 s" },
+    { id: "0178", scheme: "3 × 12-15", rest: "60 s" },
+    { id: "0391", scheme: "3 × 8-12", rest: "60 s" },
+    { id: "0186", scheme: "3 × 10-15", rest: "60 s" }
+  ];
+  var PLAN_PIERNA = [
+    { id: "0770", scheme: "4 × 6-10", rest: "2-3 min" },
+    { id: "0739", scheme: "3 × 10-12", rest: "2-3 min" },
+    { id: "0410", scheme: "3 × 8-12 (por pierna)", rest: "90 s" },
+    { id: "0586", scheme: "4 × 8-12", rest: "90 s" },
+    { id: "0585", scheme: "3 × 12-15", rest: "60 s" },
+    { id: "0228", scheme: "3 × 12-15 (por pierna)", rest: "60 s" },
+    { id: "0594", scheme: "4 × 12-20", rest: "60 s" }
+  ];
 
   function pools() {
     var p = {};
     EX.forEach(function (e) { (p[e.grp] = p[e.grp] || []).push(e); });
     return p;
-  }
-  function shuffle(a) {
-    a = a.slice();
-    for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; }
-    return a;
-  }
-
-  // Genera N días sin repetir ejercicios dentro de la rutina.
-  function generate(nDays) {
-    var p = pools(), need = {}, queues = {};
-    TEMPLATE.forEach(function (g) { need[g] = (need[g] || 0) + 1; });
-    Object.keys(need).forEach(function (g) {
-      var want = need[g] * nDays;
-      var q = shuffle(p[g] || []);
-      while (q.length < want) q = q.concat(shuffle(p[g] || []));
-      queues[g] = q.slice(0, want);
-    });
-    var days = [];
-    for (var d = 0; d < nDays; d++) {
-      days.push({ name: "Día " + (d + 1), label: "Full body", items: TEMPLATE.map(function (g) { return queues[g].shift().id; }) });
-    }
-    return { days: days, createdAt: new Date().toISOString() };
-  }
-
-  // Genera N días fijos alternando Superior / Piernas (mismos ejercicios siempre).
-  function generateFixed(nDays) {
-    var seq = [FIXED_SUPERIOR, FIXED_PIERNAS];
-    var labels = ["Superior", "Piernas"];
-    var days = [];
-    for (var d = 0; d < nDays; d++) {
-      var idx = d % 2;
-      days.push({ name: "Día " + (d + 1), label: labels[idx], items: seq[idx].slice() });
-    }
-    return { days: days, createdAt: new Date().toISOString(), fixed: true };
   }
 
   // --- registro de pesos ---
@@ -140,7 +113,7 @@
     var cutoff = twoWeeksAgo.toISOString().slice(0, 10);
 
     var counts = {};
-    TEMPLATE.forEach(function (g) { counts[g] = 0; });
+    Object.keys(GRP_LABEL).forEach(function (g) { counts[g] = 0; });
 
     dates.forEach(function (d) {
       if (d < cutoff) return;
@@ -164,20 +137,27 @@
 
   // --- render rutina ---
   var elRoutine = document.getElementById("routine");
+  var PLAN_DAYS = [["Superior", PLAN_SUPERIOR], ["Piernas", PLAN_PIERNA]];
   function renderRoutine() {
-    var r = load(K_ROUTINE, null);
-    if (!r) { elRoutine.innerHTML = '<p class="empty">Elige los días y pulsa <b>Generar rutina</b> para empezar 💪</p>'; return; }
-    var html = "";
-    r.days.forEach(function (day) {
-      html += '<h2 class="day-title"><span>' + day.name + "</span> " + esc(day.label || "Full body") + "</h2><div class='card'>";
-      day.items.forEach(function (id) {
-        var e = byId[id]; if (!e) return;
-        var last = lastLog(id);
-        html += '<div class="ex" data-id="' + id + '">' +
+    var html = '<div class="card"><h2 style="margin:0 0 10px; font-size:15px;">Progresión · 4 semanas</h2>' +
+      '<div style="font-size:13px; color:var(--dim); line-height:1.6;">' +
+      '<b style="color:var(--txt);">Semana 1:</b> peso con el que llegás al rango bajo dejando 2 repes en reserva. Anotá todo.<br>' +
+      '<b style="color:var(--txt);">Semana 2:</b> mismo peso, sumá 1-2 repes por serie.<br>' +
+      '<b style="color:var(--txt);">Semana 3:</b> seguí sumando repes, con 1 repe en reserva.<br>' +
+      '<b style="color:var(--txt);">Semana 4:</b> si llegaste al tope del rango, subí peso (+2,5 kg máquina, +1-2,5 kg mancuerna) y volvé al rango bajo.' +
+      '</div></div>';
+    PLAN_DAYS.forEach(function (pair) {
+      var label = pair[0], plan = pair[1];
+      html += '<h2 class="day-title"><span>Día</span> ' + esc(label) + '</h2><div class="card">';
+      plan.forEach(function (item) {
+        var e = byId[item.id]; if (!e) return;
+        var last = lastLog(item.id);
+        html += '<div class="ex" data-id="' + item.id + '">' +
           '<div class="ex-head"><div><div class="ex-name">' + esc(e.displayName) + '</div>' +
           '<div class="ex-meta"><span class="badge grp">' + GRP_LABEL[e.grp] + '</span>' +
-          '<span class="badge">' + esc(e.eq) + '</span></div></div>' +
-          '<div class="scheme">' + SCHEME[e.grp] + '</div></div>' +
+          '<span class="badge">' + esc(e.eq) + '</span>' +
+          '<span class="badge">Descanso ' + item.rest + '</span></div></div>' +
+          '<div class="scheme">' + item.scheme + '</div></div>' +
           '<div class="last">' + (last ? "Última vez: " + fmtW(last.w) + " × " + (last.r || "-") + " reps · " + last.d : "") + '</div>' +
           '<div class="log">' +
           '<input type="number" inputmode="decimal" class="w" placeholder="kg" value="' + (last ? last.w : "") + '">' +
@@ -410,29 +390,6 @@
     });
   });
 
-  var daysSel = document.getElementById("days");
-  daysSel.value = load(K_DAYS, "3");
-  daysSel.addEventListener("change", function () { save(K_DAYS, daysSel.value); });
-
-  var K_FIXED = "gym.fixedplan.v1";
-  var fixedChk = document.getElementById("fixed-plan");
-  var routineHint = document.getElementById("routine-hint");
-  fixedChk.checked = load(K_FIXED, false);
-  function updateRoutineHint() {
-    routineHint.innerHTML = fixedChk.checked
-      ? "Plan fijo: alterna <b>Día Superior</b> (pecho, espalda, hombros, brazos) y <b>Día Piernas</b> (cuádriceps, femoral, abductor/aductor, gemelos). Repite estos mismos ejercicios cada semana para comparar tu progreso real."
-      : "Rutina full body: cada día trabaja todo el cuerpo con ejercicios distintos. Pulsa <b>Generar</b> cuantas veces quieras para cambiarlos.";
-  }
-  updateRoutineHint();
-  fixedChk.addEventListener("change", function () { save(K_FIXED, fixedChk.checked); updateRoutineHint(); });
-
-  document.getElementById("generate").addEventListener("click", function () {
-    var nDays = parseInt(daysSel.value, 10);
-    save(K_ROUTINE, fixedChk.checked ? generateFixed(nDays) : generate(nDays));
-    renderRoutine();
-    toast(fixedChk.checked ? "Plan fijo generado 💪" : "Rutina generada 💪");
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  });
 
   elRoutine.addEventListener("click", function (ev) {
     var exEl = ev.target.closest(".ex"); if (!exEl) return;
@@ -498,7 +455,6 @@
   }
 
   function refreshAllViews() {
-    daysSel.value = load(K_DAYS, "3");
     renderRoutine();
     renderSessionsList();
     renderHistory();
@@ -511,9 +467,7 @@
     if (!user) return;
     window.fb.loadData(user.uid).then(function (cloudData) {
       if (cloudData) {
-        if (cloudData.routine) save(K_ROUTINE, cloudData.routine);
         if (cloudData.logs) save(K_LOGS, cloudData.logs);
-        if (cloudData.days) save(K_DAYS, cloudData.days);
         if (cloudData.sessions) save(K_SESSIONS, cloudData.sessions);
         refreshAllViews();
         toast("Datos sincronizados ☁️");

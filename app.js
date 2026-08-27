@@ -483,6 +483,7 @@
       if (cloudData) {
         if (cloudData.logs) save(K_LOGS, cloudData.logs);
         if (cloudData.sessions) save(K_SESSIONS, cloudData.sessions);
+        dedupeSameDateEntries();
         refreshAllViews();
         toast("Datos sincronizados ☁️");
       } else {

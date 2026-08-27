@@ -155,7 +155,11 @@
       '</div></div>';
     PLAN_DAYS.forEach(function (pair) {
       var label = pair[0], plan = pair[1];
-      html += '<h2 class="day-title"><span>Día</span> ' + esc(label) + '</h2><div class="card day-card" data-day="' + esc(label) + '">';
+      var dayId = "day-" + label;
+      html += '<button class="day-title day-toggle-btn" data-target="' + dayId + '">' +
+        '<span>Día</span> ' + esc(label) +
+        '<span class="toggle">▼</span></button>' +
+        '<div class="card day-card" id="' + dayId + '" data-day="' + esc(label) + '">';
       plan.forEach(function (item) {
         var e = byId[item.id]; if (!e) return;
         var last = lastLog(item.id);
@@ -410,6 +414,15 @@
   }
 
   elRoutine.addEventListener("click", function (ev) {
+    var toggleBtn = ev.target.closest(".day-toggle-btn");
+    if (toggleBtn) {
+      var target = document.getElementById(toggleBtn.dataset.target);
+      var arrow = toggleBtn.querySelector(".toggle");
+      var isOpen = target.style.display !== "none";
+      target.style.display = isOpen ? "none" : "block";
+      arrow.textContent = isOpen ? "▶" : "▼";
+      return;
+    }
     if (ev.target.classList.contains("save-day-btn")) {
       var dayCard = ev.target.closest(".day-card");
       var today0 = new Date().toISOString().slice(0, 10);

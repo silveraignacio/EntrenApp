@@ -46,6 +46,11 @@ button{font-family:inherit}
 
 .day-title{font-size:17px; margin:22px 0 10px; display:flex; align-items:center; gap:8px}
 .day-title span{background:var(--acc); color:#04222f; border-radius:8px; padding:2px 9px; font-size:14px; font-weight:700}
+button.day-title{
+  width:100%; border:none; background:none; padding:0; cursor:pointer; color:var(--txt);
+  font-family:inherit; text-align:left; justify-content:space-between;
+}
+.day-title .toggle{background:none; color:var(--dim); padding:0; font-size:14px; font-weight:400}
 
 .ex{border-top:1px solid var(--line); padding:13px 0}
 .ex:first-child{border-top:none; padding-top:2px}

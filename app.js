@@ -72,7 +72,7 @@
   var PLAN_PIERNA = [
     { id: "0770", scheme: "4 × 6-10", rest: "2-3 min" },
     { id: "0739", scheme: "3 × 10-12", rest: "2-3 min" },
-    { id: "0410", scheme: "3 × 8-12 (por pierna)", rest: "90 s" },
+    { id: "0768", scheme: "3 × 8-12 (por pierna)", rest: "90 s" },
     { id: "0586", scheme: "4 × 8-12", rest: "90 s" },
     { id: "0585", scheme: "3 × 12-15", rest: "60 s" },
     { id: "0228", scheme: "3 × 12-15 (por pierna)", rest: "60 s" },

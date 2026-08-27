@@ -87,9 +87,9 @@
 
   // --- registro de pesos ---
   function logsFor(id) { return load(K_LOGS, {})[id] || []; }
-  function addLog(id, w, r, s) {
+  function addLog(id, w, r, s, d) {
     var all = load(K_LOGS, {});
-    (all[id] = all[id] || []).push({ d: new Date().toISOString().slice(0, 10), w: w, r: r, s: s });
+    (all[id] = all[id] || []).push({ d: d || new Date().toISOString().slice(0, 10), w: w, r: r, s: s });
     save(K_LOGS, all);
   }
   function lastLog(id) { var l = logsFor(id); return l.length ? l[l.length - 1] : null; }
@@ -440,12 +440,16 @@
       var item = cb.closest(".session-ex-item");
       var w = parseFloat(item.querySelector(".session-w").value);
       var r = parseInt(item.querySelector(".session-r").value, 10);
-      sessions[date].push({ id: cb.value, w: isNaN(w) ? null : w, r: isNaN(r) ? null : r });
+      w = isNaN(w) ? null : w;
+      r = isNaN(r) ? null : r;
+      sessions[date].push({ id: cb.value, w: w, r: r });
+      if (w != null) addLog(cb.value, w, r, null, date);
       count++;
     });
     save(K_SESSIONS, sessions);
     toast("Se agregaron " + count + " ejercicio(s) ✔");
     renderSessionsList();
+    renderHistory();
     document.querySelectorAll(".ex-checkbox").forEach(function (cb) { cb.checked = false; });
   });
 

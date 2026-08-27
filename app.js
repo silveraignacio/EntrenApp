@@ -180,88 +180,18 @@
   }
 
   // --- render sesiones ---
-  var elSessionForm = document.getElementById("session-form");
   var elSessionsList = document.getElementById("sessions-list");
-  function renderSessionForm() {
-    var today = new Date().toISOString().slice(0, 10);
-    document.getElementById("session-date").value = today;
-    var html = '<div class="card">' +
-      '<input type="text" id="session-search" placeholder="Buscar ejercicio..." style="width: 100%; margin-bottom: 10px; padding: 9px 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--card2); color: var(--txt); font-size: 14px;">' +
-      '<div id="session-list"></div></div>';
-    elSessionForm.innerHTML = html;
-
-    var renderAccordions = function (filter) {
-      var list = document.getElementById("session-list");
-      var grouped = {};
-      var filtered = filter ? EX.filter(function (ex) { return ex.name.toLowerCase().includes(filter.toLowerCase()) || GRP_LABEL[ex.grp].toLowerCase().includes(filter.toLowerCase()); }) : EX;
-
-      filtered.forEach(function (e) {
-        if (!grouped[e.grp]) grouped[e.grp] = [];
-        grouped[e.grp].push(e);
-      });
-
-      var html = '';
-      var grpOrder = ['pecho', 'espalda', 'hombros', 'biceps', 'triceps', 'piernas', 'core'];
-      grpOrder.forEach(function (grp) {
-        if (!grouped[grp] || !grouped[grp].length) return;
-        var uid = 'accordion-' + grp;
-        html += '<div class="accordion-item" style="margin-top: 12px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden;">' +
-          '<button class="accordion-header" data-target="' + uid + '" style="width: 100%; padding: 12px; background: var(--card2); border: none; color: var(--acc); font-weight: 600; cursor: pointer; text-align: left; font-size: 14px; display: flex; justify-content: space-between; align-items: center;">' +
-          '<span>' + GRP_LABEL[grp] + '</span><span class="toggle" style="font-size: 12px;">▼</span></button>' +
-          '<div class="accordion-content" id="' + uid + '" style="display: none; padding: 12px; background: var(--bg);">';
-
-        grouped[grp].forEach(function (ex) {
-          html += '<div class="session-ex-item" style="margin-bottom: 12px; padding: 10px; background: var(--card2); border-radius: 8px; border: 1px solid var(--line);" data-ex-id="' + ex.id + '">' +
-            '<label style="display: flex; align-items: flex-start; gap: 10px; cursor: pointer; font-weight: 400; margin: 0 0 8px;">' +
-            '<input type="checkbox" class="ex-checkbox" value="' + ex.id + '" style="margin-top: 4px;">' +
-            '<div style="flex: 1;"><div style="font-size: 13px; color: var(--txt); font-weight: 500;">' + esc(ex.displayName) + '</div>' +
-            '<div style="font-size: 11px; color: var(--dim); margin-top: 2px;">' + esc(ex.eq) + '</div></div></label>';
-
-          if (ex.gif) {
-            html += '<img loading="lazy" src="' + GIF_BASE + ex.gif + '" alt="" style="width: 100%; max-width: 120px; height: 80px; object-fit: cover; border-radius: 6px; background: #000; margin-bottom: 8px;">';
-          }
-
-          html += '<div class="ex-inputs" style="display: none; gap: 8px; flex-wrap: wrap;">' +
-            '<input type="number" class="session-w" inputmode="decimal" placeholder="kg" style="flex: 1; min-width: 60px; padding: 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--txt); font-size: 13px;">' +
-            '<input type="number" class="session-r" inputmode="numeric" placeholder="reps" style="flex: 1; min-width: 60px; padding: 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--txt); font-size: 13px;">' +
-            '</div>' +
-            '</div>';
-        });
-
-        html += '</div></div>';
-      });
-
-      list.innerHTML = html || '<p style="color: var(--dim); font-size: 13px;">Sin resultados</p>';
-
-      document.querySelectorAll(".accordion-header").forEach(function (btn) {
-        btn.addEventListener("click", function () {
-          var target = document.getElementById(this.dataset.target);
-          var toggle = this.querySelector(".toggle");
-          var isOpen = target.style.display !== "none";
-          target.style.display = isOpen ? "none" : "block";
-          toggle.textContent = isOpen ? "▶" : "▼";
-        });
-      });
-
-      document.querySelectorAll(".ex-checkbox").forEach(function (cb) {
-        cb.addEventListener("change", function () {
-          var item = this.closest(".session-ex-item");
-          var inputs = item.querySelector(".ex-inputs");
-          inputs.style.display = this.checked ? "flex" : "none";
-        });
-      });
-    };
-
-    renderAccordions("");
-
-    document.getElementById("session-search").addEventListener("input", function (e) {
-      renderAccordions(e.target.value);
-    });
+  // Quita del histórico (K_LOGS) las entradas de un ejercicio en una fecha dada.
+  function removeLogEntriesOn(id, date) {
+    var all = load(K_LOGS, {});
+    if (!all[id]) return;
+    all[id] = all[id].filter(function (x) { return x.d !== date; });
+    save(K_LOGS, all);
   }
   function renderSessionsList() {
     var sessions = getSessions();
     var dates = Object.keys(sessions).sort().reverse();
-    if (!dates.length) { elSessionsList.innerHTML = '<p class="empty">Aún no registraste sesiones.</p>'; return; }
+    if (!dates.length) { elSessionsList.innerHTML = '<p class="empty">Aún no registraste sesiones. Guardalas desde la pestaña Rutina.</p>'; return; }
     var html = '';
     dates.slice(0, 10).forEach(function (d) {
       html += '<div class="card" style="margin-top: 14px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">' +
@@ -273,7 +203,10 @@
         if (!e) return;
         html += '<div style="font-size: 13px; padding: 8px; background: var(--bg); border-radius: 6px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">' +
           '<div><span style="color: var(--txt);">' + esc(e.displayName) + '</span> <b style="color: var(--acc);">' + fmtW(ex.w) + ' × ' + (ex.r || '-') + '</b></div>' +
+          '<div style="display:flex; gap:4px;">' +
           '<button class="exercise-edit-btn" data-date="' + d + '" data-index="' + idx + '" style="background: none; border: none; color: var(--dim); cursor: pointer; font-size: 12px; padding: 0 6px;">✏️</button>' +
+          '<button class="exercise-delete-btn" data-date="' + d + '" data-index="' + idx + '" style="background: none; border: none; color: var(--dim); cursor: pointer; font-size: 12px; padding: 0 6px;">🗑️</button>' +
+          '</div>' +
           '</div>';
       });
       html += '</div>';
@@ -285,10 +218,12 @@
         var date = this.dataset.date;
         if (confirm("¿Eliminar toda la sesión del " + date + "?")) {
           var sessions = getSessions();
+          (sessions[date] || []).forEach(function (ex) { removeLogEntriesOn(ex.id, date); });
           delete sessions[date];
           save(K_SESSIONS, sessions);
           toast("Sesión eliminada");
           renderSessionsList();
+          renderHistory();
         }
       });
     });
@@ -303,10 +238,34 @@
         var newW = prompt("Peso (kg) para " + e.displayName + ":", ex.w || "");
         if (newW !== null) {
           var newR = prompt("Reps:", ex.r || "");
-          sessions[date][idx] = { id: ex.id, w: isNaN(parseFloat(newW)) ? null : parseFloat(newW), r: isNaN(parseInt(newR, 10)) ? null : parseInt(newR, 10) };
+          var w2 = isNaN(parseFloat(newW)) ? null : parseFloat(newW);
+          var r2 = isNaN(parseInt(newR, 10)) ? null : parseInt(newR, 10);
+          sessions[date][idx] = { id: ex.id, w: w2, r: r2 };
           save(K_SESSIONS, sessions);
+          removeLogEntriesOn(ex.id, date);
+          if (w2 != null) addLog(ex.id, w2, r2, null, date);
           toast("Ejercicio modificado");
           renderSessionsList();
+          renderHistory();
+        }
+      });
+    });
+
+    document.querySelectorAll(".exercise-delete-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var date = this.dataset.date;
+        var idx = parseInt(this.dataset.index, 10);
+        var sessions = getSessions();
+        var ex = sessions[date][idx];
+        var e = byId[ex.id];
+        if (confirm("¿Eliminar " + (e ? e.displayName : "este ejercicio") + " del " + date + "?")) {
+          removeLogEntriesOn(ex.id, date);
+          sessions[date].splice(idx, 1);
+          if (!sessions[date].length) delete sessions[date];
+          save(K_SESSIONS, sessions);
+          toast("Ejercicio eliminado");
+          renderSessionsList();
+          renderHistory();
         }
       });
     });
@@ -418,7 +377,7 @@
       var view = "view-" + b.dataset.view;
       document.getElementById(view).classList.add("active");
       if (b.dataset.view === "historico") renderHistory();
-      if (b.dataset.view === "sesiones") { renderSessionForm(); renderSessionsList(); }
+      if (b.dataset.view === "sesiones") renderSessionsList();
       if (b.dataset.view === "analisis") renderAnalysis();
     });
   });
@@ -490,32 +449,6 @@
         (e.ins ? '<p class="ins">' + esc(e.ins) + '</p>' : "");
       box.dataset.on = "1"; ev.target.textContent = "ocultar";
     }
-  });
-
-  // --- sesiones eventos ---
-  document.getElementById("session-save").addEventListener("click", function () {
-    var date = document.getElementById("session-date").value;
-    var checkboxes = document.querySelectorAll(".ex-checkbox:checked");
-    if (!checkboxes.length) { toast("Selecciona al menos un ejercicio"); return; }
-
-    var sessions = getSessions();
-    sessions[date] = sessions[date] || [];
-    var count = 0;
-    checkboxes.forEach(function (cb) {
-      var item = cb.closest(".session-ex-item");
-      var w = parseFloat(item.querySelector(".session-w").value);
-      var r = parseInt(item.querySelector(".session-r").value, 10);
-      w = isNaN(w) ? null : w;
-      r = isNaN(r) ? null : r;
-      sessions[date].push({ id: cb.value, w: w, r: r });
-      if (w != null) addLog(cb.value, w, r, null, date);
-      count++;
-    });
-    save(K_SESSIONS, sessions);
-    toast("Se agregaron " + count + " ejercicio(s) ✔");
-    renderSessionsList();
-    renderHistory();
-    document.querySelectorAll(".ex-checkbox").forEach(function (cb) { cb.checked = false; });
   });
 
   // --- autenticación / sincronización en la nube ---

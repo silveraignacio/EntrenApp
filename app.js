@@ -151,7 +151,7 @@
       '</div></div>';
     PLAN_DAYS.forEach(function (pair) {
       var label = pair[0], plan = pair[1];
-      html += '<h2 class="day-title"><span>Día</span> ' + esc(label) + '</h2><div class="card">';
+      html += '<h2 class="day-title"><span>Día</span> ' + esc(label) + '</h2><div class="card day-card" data-day="' + esc(label) + '">';
       plan.forEach(function (item) {
         var e = byId[item.id]; if (!e) return;
         var last = lastLog(item.id);
@@ -173,6 +173,7 @@
           '<div class="gifbox"></div>' +
           '</div>';
       });
+      html += '<button class="primary save-day-btn" style="margin-top:10px;">Guardar sesión ' + esc(label) + ' completa</button>';
       html += "</div>";
     });
     elRoutine.innerHTML = html;
@@ -348,7 +349,12 @@
 
   // --- render histórico ---
   var elHistory = document.getElementById("history");
+  var historyViewMode = "exercise";
   function renderHistory() {
+    if (historyViewMode === "day") { renderHistoryByDay(); return; }
+    renderHistoryByExercise();
+  }
+  function renderHistoryByExercise() {
     var all = load(K_LOGS, {});
     var ids = Object.keys(all).filter(function (id) { return byId[id] && all[id].length; });
     if (!ids.length) { elHistory.innerHTML = '<p class="empty">Aún no registraste pesos.<br>Guarda el peso de un ejercicio y aparecerá aquí tu progreso 📈</p>'; return; }
@@ -368,6 +374,28 @@
         '<div class="ex-meta"><span class="badge grp">' + GRP_LABEL[e.grp] + '</span>' +
         '<span class="badge">Récord: ' + fmtW(pr) + '</span></div>' +
         '<div class="spark">' + bars + '</div>' + rows + '</div>';
+    });
+    elHistory.innerHTML = html;
+  }
+  function renderHistoryByDay() {
+    var all = load(K_LOGS, {});
+    var byDate = {};
+    Object.keys(all).forEach(function (id) {
+      if (!byId[id]) return;
+      all[id].forEach(function (x) {
+        (byDate[x.d] = byDate[x.d] || []).push({ id: id, w: x.w, r: x.r, s: x.s });
+      });
+    });
+    var dates = Object.keys(byDate).sort().reverse();
+    if (!dates.length) { elHistory.innerHTML = '<p class="empty">Aún no registraste pesos.<br>Guarda el peso de un ejercicio y aparecerá aquí tu progreso 📈</p>'; return; }
+    var html = "";
+    dates.forEach(function (d) {
+      html += '<div class="card hgroup"><div class="hname">' + d + '</div>';
+      byDate[d].forEach(function (x) {
+        var e = byId[x.id]; if (!e) return;
+        html += '<div class="hrow"><span>' + esc(e.displayName) + '</span><b>' + fmtLast(x) + '</b></div>';
+      });
+      html += '</div>';
     });
     elHistory.innerHTML = html;
   }
@@ -395,8 +423,51 @@
     });
   });
 
+  document.getElementById("hist-by-exercise").addEventListener("click", function () {
+    historyViewMode = "exercise";
+    document.getElementById("hist-by-exercise").classList.add("active");
+    document.getElementById("hist-by-day").classList.remove("active");
+    renderHistory();
+  });
+  document.getElementById("hist-by-day").addEventListener("click", function () {
+    historyViewMode = "day";
+    document.getElementById("hist-by-day").classList.add("active");
+    document.getElementById("hist-by-exercise").classList.remove("active");
+    renderHistory();
+  });
+
+
+  // Guarda un ejercicio en el histórico y en la sesión de hoy (actualiza si ya estaba).
+  function saveExerciseToday(id, w, r, s, sessions, today) {
+    addLog(id, w, r, s);
+    sessions[today] = sessions[today] || [];
+    var exists = sessions[today].find(function (ex) { return ex.id === id; });
+    if (exists) { exists.w = w; exists.r = r; exists.s = s; }
+    else { sessions[today].push({ id: id, w: w, r: r, s: s }); }
+  }
 
   elRoutine.addEventListener("click", function (ev) {
+    if (ev.target.classList.contains("save-day-btn")) {
+      var dayCard = ev.target.closest(".day-card");
+      var today0 = new Date().toISOString().slice(0, 10);
+      var sessions0 = getSessions();
+      var count = 0;
+      dayCard.querySelectorAll(".ex").forEach(function (exEl2) {
+        var w2 = parseFloat(exEl2.querySelector(".w").value);
+        if (isNaN(w2)) return;
+        var r2 = parseInt(exEl2.querySelector(".r").value, 10);
+        var s2 = parseInt(exEl2.querySelector(".s").value, 10);
+        r2 = isNaN(r2) ? null : r2;
+        s2 = isNaN(s2) ? null : s2;
+        saveExerciseToday(exEl2.dataset.id, w2, r2, s2, sessions0, today0);
+        exEl2.querySelector(".last").textContent = "Última vez: " + fmtLast({ w: w2, r: r2, s: s2 }) + " · hoy";
+        count++;
+      });
+      if (!count) { toast("Completa el peso de al menos un ejercicio"); return; }
+      save(K_SESSIONS, sessions0);
+      toast("Sesión " + dayCard.dataset.day + " guardada: " + count + " ejercicio(s) ✔");
+      return;
+    }
     var exEl = ev.target.closest(".ex"); if (!exEl) return;
     var id = exEl.dataset.id;
     if (ev.target.classList.contains("save")) {
@@ -406,16 +477,10 @@
       if (isNaN(w)) { toast("Escribe el peso"); return; }
       s = isNaN(s) ? null : s;
       r = isNaN(r) ? null : r;
-      addLog(id, w, r, s);
-      // También agregarlo a sesión de hoy
       var today = new Date().toISOString().slice(0, 10);
       var sessions = getSessions();
-      sessions[today] = sessions[today] || [];
-      var exists = sessions[today].find(function (ex) { return ex.id === id; });
-      if (!exists) {
-        sessions[today].push({ id: id, w: w, r: r, s: s });
-        save(K_SESSIONS, sessions);
-      }
+      saveExerciseToday(id, w, r, s, sessions, today);
+      save(K_SESSIONS, sessions);
       exEl.querySelector(".last").textContent = "Última vez: " + fmtLast({ w: w, r: r, s: s }) + " · hoy";
       toast("Guardado ✔");
     } else if (ev.target.classList.contains("togif")) {

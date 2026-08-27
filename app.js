@@ -88,8 +88,12 @@
   // --- registro de pesos ---
   function logsFor(id) { return load(K_LOGS, {})[id] || []; }
   function addLog(id, w, r, s, d) {
+    d = d || new Date().toISOString().slice(0, 10);
     var all = load(K_LOGS, {});
-    (all[id] = all[id] || []).push({ d: d || new Date().toISOString().slice(0, 10), w: w, r: r, s: s });
+    all[id] = all[id] || [];
+    var existing = all[id].find(function (x) { return x.d === d; });
+    if (existing) { existing.w = w; existing.r = r; existing.s = s; }
+    else { all[id].push({ d: d, w: w, r: r, s: s }); }
     save(K_LOGS, all);
   }
   function lastLog(id) { var l = logsFor(id); return l.length ? l[l.length - 1] : null; }
@@ -520,6 +524,35 @@
     }).catch(function (e) { toast("Error: " + e.message); });
   });
 
+  // Limpia duplicados que hayan quedado guardados antes de este arreglo
+  // (mismo ejercicio, misma fecha, más de una entrada). Conserva la última.
+  function dedupeSameDateEntries() {
+    var logs = load(K_LOGS, {});
+    var logsChanged = false;
+    Object.keys(logs).forEach(function (id) {
+      var seen = {}, deduped = [];
+      logs[id].forEach(function (x) {
+        if (seen.hasOwnProperty(x.d)) { deduped[seen[x.d]] = x; logsChanged = true; }
+        else { seen[x.d] = deduped.length; deduped.push(x); }
+      });
+      logs[id] = deduped;
+    });
+    if (logsChanged) save(K_LOGS, logs);
+
+    var sessions = load(K_SESSIONS, {});
+    var sessionsChanged = false;
+    Object.keys(sessions).forEach(function (d) {
+      var seen = {}, deduped = [];
+      sessions[d].forEach(function (ex) {
+        if (seen.hasOwnProperty(ex.id)) { deduped[seen[ex.id]] = ex; sessionsChanged = true; }
+        else { seen[ex.id] = deduped.length; deduped.push(ex); }
+      });
+      sessions[d] = deduped;
+    });
+    if (sessionsChanged) save(K_SESSIONS, sessions);
+  }
+
   // --- init ---
+  dedupeSameDateEntries();
   renderRoutine();
 })();

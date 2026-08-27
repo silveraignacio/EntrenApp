@@ -87,12 +87,15 @@
 
   // --- registro de pesos ---
   function logsFor(id) { return load(K_LOGS, {})[id] || []; }
-  function addLog(id, w, r) {
+  function addLog(id, w, r, s) {
     var all = load(K_LOGS, {});
-    (all[id] = all[id] || []).push({ d: new Date().toISOString().slice(0, 10), w: w, r: r });
+    (all[id] = all[id] || []).push({ d: new Date().toISOString().slice(0, 10), w: w, r: r, s: s });
     save(K_LOGS, all);
   }
   function lastLog(id) { var l = logsFor(id); return l.length ? l[l.length - 1] : null; }
+  function fmtLast(x) {
+    return fmtW(x.w) + " × " + (x.r != null ? x.r : "-") + " reps" + (x.s != null ? " × " + x.s + " series" : "");
+  }
   function prWeight(id) { return logsFor(id).reduce(function (m, x) { return Math.max(m, x.w || 0); }, 0); }
 
   // --- sesiones ---
@@ -152,16 +155,18 @@
       plan.forEach(function (item) {
         var e = byId[item.id]; if (!e) return;
         var last = lastLog(item.id);
+        var defaultSets = (item.scheme.match(/^(\d+)/) || [])[1] || "";
         html += '<div class="ex" data-id="' + item.id + '">' +
           '<div class="ex-head"><div><div class="ex-name">' + esc(e.displayName) + '</div>' +
           '<div class="ex-meta"><span class="badge grp">' + GRP_LABEL[e.grp] + '</span>' +
           '<span class="badge">' + esc(e.eq) + '</span>' +
           '<span class="badge">Descanso ' + item.rest + '</span></div></div>' +
           '<div class="scheme">' + item.scheme + '</div></div>' +
-          '<div class="last">' + (last ? "Última vez: " + fmtW(last.w) + " × " + (last.r || "-") + " reps · " + last.d : "") + '</div>' +
+          '<div class="last">' + (last ? "Última vez: " + fmtLast(last) + " · " + last.d : "") + '</div>' +
           '<div class="log">' +
           '<input type="number" inputmode="decimal" class="w" placeholder="kg" value="' + (last ? last.w : "") + '">' +
           '<input type="number" inputmode="numeric" class="r" placeholder="reps" value="' + (last ? (last.r || "") : "") + '">' +
+          '<input type="number" inputmode="numeric" class="s" placeholder="series" value="' + (last && last.s != null ? last.s : defaultSets) + '">' +
           '<button class="save">Guardar</button>' +
           '<button class="linkbtn togif">ver ejercicio</button>' +
           '</div>' +
@@ -357,9 +362,9 @@
       }).join("");
       var rows = logs.slice().reverse().slice(0, 8).map(function (x) {
         var isPr = (x.w === pr) ? ' <span class="pr">PR</span>' : "";
-        return '<div class="hrow"><span>' + x.d + isPr + '</span><b>' + fmtW(x.w) + " × " + (x.r || "-") + '</b></div>';
+        return '<div class="hrow"><span>' + x.d + isPr + '</span><b>' + fmtLast(x) + '</b></div>';
       }).join("");
-      html += '<div class="card hgroup"><div class="hname">' + esc(e.name) + '</div>' +
+      html += '<div class="card hgroup"><div class="hname">' + esc(e.displayName) + '</div>' +
         '<div class="ex-meta"><span class="badge grp">' + GRP_LABEL[e.grp] + '</span>' +
         '<span class="badge">Récord: ' + fmtW(pr) + '</span></div>' +
         '<div class="spark">' + bars + '</div>' + rows + '</div>';
@@ -397,18 +402,21 @@
     if (ev.target.classList.contains("save")) {
       var w = parseFloat(exEl.querySelector(".w").value);
       var r = parseInt(exEl.querySelector(".r").value, 10);
+      var s = parseInt(exEl.querySelector(".s").value, 10);
       if (isNaN(w)) { toast("Escribe el peso"); return; }
-      addLog(id, w, isNaN(r) ? null : r);
+      s = isNaN(s) ? null : s;
+      r = isNaN(r) ? null : r;
+      addLog(id, w, r, s);
       // También agregarlo a sesión de hoy
       var today = new Date().toISOString().slice(0, 10);
       var sessions = getSessions();
       sessions[today] = sessions[today] || [];
       var exists = sessions[today].find(function (ex) { return ex.id === id; });
       if (!exists) {
-        sessions[today].push({ id: id, w: w, r: isNaN(r) ? null : r });
+        sessions[today].push({ id: id, w: w, r: r, s: s });
         save(K_SESSIONS, sessions);
       }
-      exEl.querySelector(".last").textContent = "Última vez: " + fmtW(w) + " × " + (isNaN(r) ? "-" : r) + " reps · hoy";
+      exEl.querySelector(".last").textContent = "Última vez: " + fmtLast({ w: w, r: r, s: s }) + " · hoy";
       toast("Guardado ✔");
     } else if (ev.target.classList.contains("togif")) {
       var box = exEl.querySelector(".gifbox"), e = byId[id];

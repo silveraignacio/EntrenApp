@@ -172,7 +172,7 @@
           '<div class="scheme">' + item.scheme + '</div></div>' +
           '<div class="last">' + (last ? "Última vez: " + fmtLast(last) + " · " + last.d : "") + '</div>' +
           '<div class="log">' +
-          '<input type="number" inputmode="decimal" class="w" placeholder="kg" value="' + (last ? last.w : "") + '">' +
+          '<input type="text" inputmode="decimal" class="w" placeholder="kg" value="' + (last ? last.w : "") + '">' +
           '<input type="number" inputmode="numeric" class="r" placeholder="reps" value="' + (last ? (last.r || "") : "") + '">' +
           '<input type="number" inputmode="numeric" class="s" placeholder="series" value="' + (last && last.s != null ? last.s : defaultSets) + '">' +
           '<button class="save">Guardar</button>' +
@@ -246,7 +246,7 @@
         var newW = prompt("Peso (kg) para " + e.displayName + ":", ex.w || "");
         if (newW !== null) {
           var newR = prompt("Reps:", ex.r || "");
-          var w2 = isNaN(parseFloat(newW)) ? null : parseFloat(newW);
+          var w2 = isNaN(parseW(newW)) ? null : parseW(newW);
           var r2 = isNaN(parseInt(newR, 10)) ? null : parseInt(newR, 10);
           sessions[date][idx] = { id: ex.id, w: w2, r: r2 };
           save(K_SESSIONS, sessions);
@@ -370,6 +370,7 @@
   // --- utilidades ---
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
   function fmtW(w) { return (w || w === 0) ? w + " kg" : "-"; }
+  function parseW(str) { return parseFloat(String(str).trim().replace(",", ".")); }
   var toastT;
   function toast(msg) {
     var t = document.getElementById("toast"); t.textContent = msg; t.classList.add("show");
@@ -429,7 +430,7 @@
       var sessions0 = getSessions();
       var count = 0;
       dayCard.querySelectorAll(".ex").forEach(function (exEl2) {
-        var w2 = parseFloat(exEl2.querySelector(".w").value);
+        var w2 = parseW(exEl2.querySelector(".w").value);
         if (isNaN(w2)) return;
         var r2 = parseInt(exEl2.querySelector(".r").value, 10);
         var s2 = parseInt(exEl2.querySelector(".s").value, 10);
@@ -447,7 +448,7 @@
     var exEl = ev.target.closest(".ex"); if (!exEl) return;
     var id = exEl.dataset.id;
     if (ev.target.classList.contains("save")) {
-      var w = parseFloat(exEl.querySelector(".w").value);
+      var w = parseW(exEl.querySelector(".w").value);
       var r = parseInt(exEl.querySelector(".r").value, 10);
       var s = parseInt(exEl.querySelector(".s").value, 10);
       if (isNaN(w)) { toast("Escribe el peso"); return; }

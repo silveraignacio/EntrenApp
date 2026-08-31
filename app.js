@@ -61,13 +61,13 @@
   // Rutina fija de 4 semanas: Superior / Piernas, siempre los mismos ejercicios.
   var PLAN_SUPERIOR = [
     { id: "0025", scheme: "4 × 6-10", rest: "2-3 min" },
-    { id: "0818", scheme: "4 × 8-12", rest: "2-3 min" },
+    { id: "0197", scheme: "4 × 8-12", rest: "2-3 min" },
     { id: "3545", scheme: "3 × 8-12", rest: "90 s" },
     { id: "0180", scheme: "3 × 8-12", rest: "90 s" },
     { id: "0869", scheme: "3 × 8-12", rest: "90 s" },
     { id: "0178", scheme: "3 × 12-15", rest: "60 s" },
     { id: "0391", scheme: "3 × 8-12", rest: "60 s" },
-    { id: "0186", scheme: "3 × 10-15", rest: "60 s" }
+    { id: "0200", scheme: "3 × 10-15", rest: "60 s" }
   ];
   var PLAN_PIERNA = [
     { id: "0770", scheme: "4 × 6-10", rest: "2-3 min" },

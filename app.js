@@ -65,7 +65,7 @@
     { id: "0314", scheme: "3 × 8-12", rest: "90 s" },
     { id: "0180", scheme: "3 × 8-12", rest: "90 s" },
     { id: "0869", scheme: "3 × 8-12", rest: "90 s" },
-    { id: "0178", scheme: "3 × 12-15", rest: "60 s" },
+    { id: "0334", scheme: "3 × 12-15", rest: "60 s" },
     { id: "0391", scheme: "3 × 8-12", rest: "60 s" },
     { id: "0200", scheme: "3 × 10-15", rest: "60 s" }
   ];

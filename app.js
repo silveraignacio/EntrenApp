@@ -8,6 +8,7 @@
   // --- almacenamiento ---
   var K_LOGS = "gym.logs.v1";
   var K_SESSIONS = "gym.sessions.v1";
+  var K_VARIANTS = "gym.variants.v1";
   function load(k, def) { try { return JSON.parse(localStorage.getItem(k)) || def; } catch (e) { return def; } }
   function save(k, v) { localStorage.setItem(k, JSON.stringify(v)); scheduleCloudSync(); }
 
@@ -20,7 +21,8 @@
     var run = function () {
       window.fb.saveData(currentUser.uid, {
         logs: load(K_LOGS, {}),
-        sessions: load(K_SESSIONS, {})
+        sessions: load(K_SESSIONS, {}),
+        variants: load(K_VARIANTS, {})
       }).catch(function () { toast("No se pudo sincronizar"); });
     };
     if (immediate) run(); else cloudSyncTimer = setTimeout(run, 800);
@@ -64,7 +66,7 @@
     { id: "0197", scheme: "4 × 8-12", rest: "2-3 min" },
     { id: "0314", scheme: "3 × 8-12", rest: "90 s" },
     { id: "0180", scheme: "3 × 8-12", rest: "90 s" },
-    { id: "0869", scheme: "3 × 8-12", rest: "90 s" },
+    { id: "0869", scheme: "3 × 8-12", rest: "90 s", variants: ["1456"] },
     { id: "0334", scheme: "3 × 12-15", rest: "60 s" },
     { id: "0391", scheme: "3 × 8-12", rest: "60 s" },
     { id: "0200", scheme: "3 × 10-15", rest: "60 s" }
@@ -72,11 +74,18 @@
   var PLAN_PIERNA = [
     { id: "0770", scheme: "4 × 6-10", rest: "2-3 min" },
     { id: "0739", scheme: "3 × 10-12", rest: "2-3 min" },
-    { id: "0768", scheme: "3 × 8-12 (por pierna)", rest: "90 s" },
+    { id: "0768", scheme: "3 × 8-12 (por pierna)", rest: "90 s", variants: ["0410"] },
     { id: "0586", scheme: "4 × 8-12", rest: "90 s" },
     { id: "0585", scheme: "3 × 12-15", rest: "60 s" },
     { id: "0228", scheme: "3 × 12-15 (por pierna)", rest: "60 s" },
     { id: "0594", scheme: "4 × 12-20", rest: "60 s" }
+  ];
+  // Día opcional: complementa lo que Superior/Piernas no cubren bien.
+  var PLAN_MIX = [
+    { id: "0597", scheme: "3 × 12-15", rest: "60 s" },
+    { id: "0598", scheme: "3 × 12-15", rest: "60 s" },
+    { id: "0202", scheme: "3 × 12-15", rest: "60 s" },
+    { id: "1409", scheme: "3 × 12-15", rest: "90 s" }
   ];
 
   function pools() {
@@ -144,8 +153,13 @@
 
   // --- render rutina ---
   var elRoutine = document.getElementById("routine");
-  var PLAN_DAYS = [["Superior", PLAN_SUPERIOR], ["Piernas", PLAN_PIERNA]];
+  var PLAN_DAYS = [
+    ["Superior", PLAN_SUPERIOR, false],
+    ["Piernas", PLAN_PIERNA, false],
+    ["Mix (opcional)", PLAN_MIX, true]
+  ];
   function renderRoutine() {
+    var variantMap = load(K_VARIANTS, {});
     var html = '<div class="card"><h2 style="margin:0 0 10px; font-size:15px;">Progresión · 4 semanas</h2>' +
       '<div style="font-size:13px; color:var(--dim); line-height:1.6;">' +
       '<b style="color:var(--txt);">Semana 1:</b> peso con el que llegás al rango bajo dejando 2 repes en reserva. Anotá todo.<br>' +
@@ -153,24 +167,36 @@
       '<b style="color:var(--txt);">Semana 3:</b> seguí sumando repes, con 1 repe en reserva.<br>' +
       '<b style="color:var(--txt);">Semana 4:</b> si llegaste al tope del rango, subí peso (+2,5 kg máquina, +1-2,5 kg mancuerna) y volvé al rango bajo.' +
       '</div></div>';
-    PLAN_DAYS.forEach(function (pair) {
-      var label = pair[0], plan = pair[1];
-      var dayId = "day-" + label;
+    PLAN_DAYS.forEach(function (trio) {
+      var label = trio[0], plan = trio[1], startCollapsed = trio[2];
+      var dayId = "day-" + label.replace(/\s.*/, "");
       html += '<button class="day-title day-toggle-btn" data-target="' + dayId + '">' +
         '<span>Día</span> ' + esc(label) +
-        '<span class="toggle">▼</span></button>' +
-        '<div class="card day-card" id="' + dayId + '" data-day="' + esc(label) + '">';
+        '<span class="toggle">' + (startCollapsed ? "▶" : "▼") + '</span></button>' +
+        '<div class="card day-card" id="' + dayId + '" data-day="' + esc(label) + '"' +
+        (startCollapsed ? ' style="display:none;"' : '') + '>';
       plan.forEach(function (item) {
-        var e = byId[item.id]; if (!e) return;
-        var last = lastLog(item.id);
+        var slot = item.id;
+        var activeId = variantMap[slot] || slot;
+        var e = byId[activeId]; if (!e) return;
+        var last = lastLog(activeId);
         var defaultSets = (item.scheme.match(/^(\d+)/) || [])[1] || "";
-        html += '<div class="ex" data-id="' + item.id + '">' +
+        html += '<div class="ex" data-id="' + activeId + '" data-slot="' + slot + '">' +
           '<div class="ex-head"><div><div class="ex-name">' + esc(e.displayName) + '</div>' +
           '<div class="ex-meta"><span class="badge grp">' + GRP_LABEL[e.grp] + '</span>' +
           '<span class="badge">' + esc(e.eq) + '</span>' +
           '<span class="badge">Descanso ' + item.rest + '</span></div></div>' +
-          '<div class="scheme">' + item.scheme + '</div></div>' +
-          '<div class="last">' + (last ? "Última vez: " + fmtLast(last) + " · " + last.d : "") + '</div>' +
+          '<div class="scheme">' + item.scheme + '</div></div>';
+        if (item.variants && item.variants.length) {
+          html += '<select class="variant-select">' +
+            '<option value="' + slot + '"' + (activeId === slot ? " selected" : "") + '>' + esc(byId[slot].displayName) + '</option>';
+          item.variants.forEach(function (vid) {
+            var ve = byId[vid]; if (!ve) return;
+            html += '<option value="' + vid + '"' + (activeId === vid ? " selected" : "") + '>' + esc(ve.displayName) + '</option>';
+          });
+          html += '</select>';
+        }
+        html += '<div class="last">' + (last ? "Última vez: " + fmtLast(last) + " · " + last.d : "") + '</div>' +
           '<div class="log">' +
           '<input type="text" inputmode="decimal" class="w" placeholder="kg" value="' + (last ? last.w : "") + '">' +
           '<input type="number" inputmode="numeric" class="r" placeholder="reps" value="' + (last ? (last.r || "") : "") + '">' +
@@ -414,6 +440,17 @@
     else { sessions[today].push({ id: id, w: w, r: r, s: s }); }
   }
 
+  elRoutine.addEventListener("change", function (ev) {
+    if (!ev.target.classList.contains("variant-select")) return;
+    var exEl = ev.target.closest(".ex");
+    var slot = exEl.dataset.slot;
+    var newId = ev.target.value;
+    var variantMap = load(K_VARIANTS, {});
+    if (newId === slot) delete variantMap[slot]; else variantMap[slot] = newId;
+    save(K_VARIANTS, variantMap);
+    renderRoutine();
+  });
+
   elRoutine.addEventListener("click", function (ev) {
     var toggleBtn = ev.target.closest(".day-toggle-btn");
     if (toggleBtn) {
@@ -497,6 +534,7 @@
       if (cloudData) {
         if (cloudData.logs) save(K_LOGS, cloudData.logs);
         if (cloudData.sessions) save(K_SESSIONS, cloudData.sessions);
+        if (cloudData.variants) save(K_VARIANTS, cloudData.variants);
         dedupeSameDateEntries();
         refreshAllViews();
         toast("Datos sincronizados ☁️");

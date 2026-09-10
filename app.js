@@ -85,7 +85,10 @@
     { id: "0597", scheme: "3 × 12-15", rest: "60 s" },
     { id: "0598", scheme: "3 × 12-15", rest: "60 s" },
     { id: "0202", scheme: "3 × 12-15", rest: "60 s" },
-    { id: "1409", scheme: "3 × 12-15", rest: "90 s" }
+    { id: "1313", scheme: "3 × 10-12", rest: "90 s" },
+    { id: "1301", scheme: "3 × 10-12", rest: "90 s" },
+    { id: "0599", scheme: "3 × 10-12", rest: "60 s" },
+    { id: "0605", scheme: "3 × 12-15", rest: "60 s" }
   ];
 
   function pools() {

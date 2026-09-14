@@ -68,8 +68,7 @@
     { id: "0180", scheme: "3 × 8-12", rest: "90 s" },
     { id: "0869", scheme: "3 × 8-12", rest: "90 s", variants: ["0426"] },
     { id: "0334", scheme: "3 × 12-15", rest: "60 s" },
-    { id: "0391", scheme: "3 × 8-12", rest: "60 s" },
-    { id: "0200", scheme: "3 × 10-15", rest: "60 s" }
+    { id: "0391", scheme: "3 × 8-12", rest: "60 s" }
   ];
   var PLAN_PIERNA = [
     { id: "0770", scheme: "4 × 6-10", rest: "2-3 min", variants: ["0743"] },
@@ -88,7 +87,8 @@
     { id: "1313", scheme: "3 × 10-12", rest: "90 s" },
     { id: "1301", scheme: "3 × 10-12", rest: "90 s" },
     { id: "0599", scheme: "3 × 10-12", rest: "60 s" },
-    { id: "0605", scheme: "3 × 12-15", rest: "60 s" }
+    { id: "0596", scheme: "3 × 12-15", rest: "60 s" },
+    { id: "0200", scheme: "3 × 10-15", rest: "60 s" }
   ];
 
   function pools() {

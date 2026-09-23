@@ -74,7 +74,7 @@
     { id: "0770", scheme: "4 × 6-10", rest: "2-3 min", variants: ["0743"] },
     { id: "0739", scheme: "3 × 10-12", rest: "2-3 min", variants: ["2287"] },
     { id: "0768", scheme: "3 × 8-12 (por pierna)", rest: "90 s", variants: ["0410"] },
-    { id: "0586", scheme: "4 × 8-12", rest: "90 s" },
+    { id: "0586", scheme: "4 × 8-12", rest: "90 s", variants: ["0599"] },
     { id: "0585", scheme: "3 × 12-15", rest: "60 s" },
     { id: "0228", scheme: "3 × 12-15 (por pierna)", rest: "60 s" },
     { id: "0594", scheme: "4 × 12-20", rest: "60 s" }
@@ -86,7 +86,6 @@
     { id: "0202", scheme: "3 × 12-15", rest: "60 s" },
     { id: "1313", scheme: "3 × 10-12", rest: "90 s" },
     { id: "1301", scheme: "3 × 10-12", rest: "90 s" },
-    { id: "0599", scheme: "3 × 10-12", rest: "60 s" },
     { id: "0596", scheme: "3 × 12-15", rest: "60 s" },
     { id: "0200", scheme: "3 × 10-15", rest: "60 s" }
   ];

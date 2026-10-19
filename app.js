@@ -62,7 +62,7 @@
 
   // Rutina fija de 4 semanas: Superior / Piernas, siempre los mismos ejercicios.
   var PLAN_SUPERIOR = [
-    { id: "0025", scheme: "4 × 6-10", rest: "2-3 min" },
+    { id: "0025", scheme: "4 × 6-10", rest: "2-3 min", variants: ["x001"] },
     { id: "0197", scheme: "4 × 8-12", rest: "2-3 min" },
     { id: "0314", scheme: "3 × 8-12", rest: "90 s" },
     { id: "0180", scheme: "3 × 8-12", rest: "90 s" },
@@ -502,7 +502,7 @@
     } else if (ev.target.classList.contains("togif")) {
       var box = exEl.querySelector(".gifbox"), e = byId[id];
       if (box.dataset.on) { box.innerHTML = ""; box.dataset.on = ""; ev.target.textContent = "ver ejercicio"; return; }
-      box.innerHTML = (e.gif ? '<img class="gif" loading="lazy" src="' + GIF_BASE + e.gif + '" alt="">' : "") +
+      box.innerHTML = (e.gif ? '<img class="gif" loading="lazy" src="' + (e.gif.indexOf("/") >= 0 ? e.gif : GIF_BASE + e.gif) + '" alt="">' : "") +
         (e.ins ? '<p class="ins">' + esc(e.ins) + '</p>' : "");
       box.dataset.on = "1"; ev.target.textContent = "ocultar";
     }

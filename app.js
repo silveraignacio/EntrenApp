@@ -64,7 +64,7 @@
   var PLAN_SUPERIOR = [
     { id: "0025", scheme: "4 × 6-10", rest: "2-3 min", variants: ["x001"] },
     { id: "0197", scheme: "4 × 8-12", rest: "2-3 min" },
-    { id: "0314", scheme: "3 × 8-12", rest: "90 s" },
+    { id: "0314", scheme: "3 × 8-12", rest: "90 s", variants: ["1479"] },
     { id: "0180", scheme: "3 × 8-12", rest: "90 s" },
     { id: "0869", scheme: "3 × 8-12", rest: "90 s", variants: ["0426"] },
     { id: "0334", scheme: "3 × 12-15", rest: "60 s" },
@@ -89,6 +89,40 @@
     { id: "0596", scheme: "3 × 12-15", rest: "60 s" },
     { id: "0200", scheme: "3 × 10-15", rest: "60 s" }
   ];
+
+  // Desde noviembre 2026: full body 2 días fijos (A y B) + 1 opcional (C).
+  // Cada músculo se trabaja al menos 2 veces por semana con A + B.
+  var PLAN_A = [
+    { id: "0770", scheme: "4 × 6-10", rest: "2-3 min", variants: ["0743"] },
+    { id: "0025", scheme: "4 × 6-10", rest: "2-3 min", variants: ["x001"] },
+    { id: "0197", scheme: "3 × 8-12", rest: "2 min" },
+    { id: "0586", scheme: "3 × 8-12", rest: "90 s", variants: ["0599"] },
+    { id: "0334", scheme: "3 × 12-15", rest: "60 s" },
+    { id: "0391", scheme: "3 × 10-12", rest: "60 s", variants: ["0439"] }
+  ];
+  var PLAN_B = [
+    { id: "0739", scheme: "3 × 10-12", rest: "2-3 min", variants: ["2287"] },
+    { id: "0314", scheme: "3 × 8-12", rest: "2 min", variants: ["1479"] },
+    { id: "0180", scheme: "3 × 8-12", rest: "90 s" },
+    { id: "0869", scheme: "3 × 8-12", rest: "90 s", variants: ["0426"] },
+    { id: "0586", scheme: "3 × 10-15", rest: "90 s", variants: ["0599"] },
+    { id: "0200", scheme: "3 × 10-12", rest: "60 s" }
+  ];
+  // Día opcional, más liviano (sin llegar al fallo): suma gemelo, deltoide posterior y cadera.
+  var PLAN_C = [
+    { id: "0585", scheme: "3 × 12-15", rest: "60 s" },
+    { id: "1301", scheme: "3 × 10-12", rest: "90 s" },
+    { id: "1313", scheme: "3 × 10-12", rest: "90 s" },
+    { id: "0202", scheme: "3 × 12-15", rest: "60 s" },
+    { id: "0594", scheme: "3 × 12-20", rest: "60 s" },
+    { id: "0597", scheme: "3 × 12-15 (alternar semanas)", rest: "60 s", variants: ["0598"] }
+  ];
+  var FULLBODY_START = "2026-11-01";
+  function isFullBody() { return localDate() >= FULLBODY_START; }
+  function localDate() {
+    var d = new Date();
+    return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2);
+  }
 
   function pools() {
     var p = {};
@@ -155,11 +189,18 @@
 
   // --- render rutina ---
   var elRoutine = document.getElementById("routine");
-  var PLAN_DAYS = [
-    ["Superior", PLAN_SUPERIOR, false],
-    ["Piernas", PLAN_PIERNA, false],
-    ["Mix (opcional)", PLAN_MIX, true]
-  ];
+  function planDays() {
+    if (isFullBody()) return [
+      ["A", PLAN_A, false],
+      ["B", PLAN_B, false],
+      ["C (opcional)", PLAN_C, true]
+    ];
+    return [
+      ["Superior", PLAN_SUPERIOR, false],
+      ["Piernas", PLAN_PIERNA, false],
+      ["Mix (opcional)", PLAN_MIX, true]
+    ];
+  }
   function renderRoutine() {
     var variantMap = load(K_VARIANTS, {});
     var html = '<div class="card"><h2 style="margin:0 0 10px; font-size:15px;">Progresión · 4 semanas</h2>' +
@@ -169,7 +210,7 @@
       '<b style="color:var(--txt);">Semana 3:</b> seguí sumando repes, con 1 repe en reserva.<br>' +
       '<b style="color:var(--txt);">Semana 4:</b> si llegaste al tope del rango, subí peso (+2,5 kg máquina, +1-2,5 kg mancuerna) y volvé al rango bajo.' +
       '</div></div>';
-    PLAN_DAYS.forEach(function (trio) {
+    planDays().forEach(function (trio) {
       var label = trio[0], plan = trio[1], startCollapsed = trio[2];
       var dayId = "day-" + label.replace(/\s.*/, "");
       html += '<button class="day-title day-toggle-btn" data-target="' + dayId + '">' +
@@ -329,7 +370,7 @@
     var least = sorted[sorted.length - 1];
     html += '<div class="card" style="margin-top: 14px;"><h3 style="margin: 0 0 10px; font-size: 15px;">💡 Recomendaciones</h3>';
     html += '<p style="font-size: 13px; color: var(--dim); margin: 0 0 10px; line-height: 1.4;">Trabajaste poco <b>' + GRP_LABEL[least] + '</b>. ';
-    html += 'Para 2 días/semana: <b>Día 1: pecho, espalda, hombros, brazos</b> | <b>Día 2: piernas y core</b></p>';
+    html += 'Para 2 días/semana: <b>Días A y B full body</b>, así cada músculo se trabaja 2 veces por semana.</p>';
 
     var recs = recommendExercises(least);
     if (recs.length) {

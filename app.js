@@ -9,6 +9,7 @@
   var K_LOGS = "gym.logs.v1";
   var K_SESSIONS = "gym.sessions.v1";
   var K_VARIANTS = "gym.variants.v1";
+  var K_PLAN = "gym.plan.v1"; // "fullbody" | "anterior"; sin valor = según la fecha
   function load(k, def) { try { return JSON.parse(localStorage.getItem(k)) || def; } catch (e) { return def; } }
   function save(k, v) { localStorage.setItem(k, JSON.stringify(v)); scheduleCloudSync(); }
 
@@ -118,7 +119,12 @@
     { id: "0597", scheme: "3 × 12-15 (alternar semanas)", rest: "60 s", variants: ["0598"] }
   ];
   var FULLBODY_START = "2026-11-01";
-  function isFullBody() { return localDate() >= FULLBODY_START; }
+  function isFullBody() {
+    var choice = load(K_PLAN, null);
+    if (choice === "fullbody") return true;
+    if (choice === "anterior") return false;
+    return localDate() >= FULLBODY_START;
+  }
   function localDate() {
     var d = new Date();
     return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2);
@@ -203,7 +209,12 @@
   }
   function renderRoutine() {
     var variantMap = load(K_VARIANTS, {});
-    var html = '<div class="card"><h2 style="margin:0 0 10px; font-size:15px;">Progresión · 4 semanas</h2>' +
+    var fb = isFullBody();
+    var html = '<div class="card"><select class="plan-select" style="font-size:14px; padding:6px 8px;">' +
+      '<option value="fullbody"' + (fb ? " selected" : "") + '>Plan: Full body (A / B / C)</option>' +
+      '<option value="anterior"' + (fb ? "" : " selected") + '>Plan anterior (Superior / Piernas / Mix)</option>' +
+      '</select></div>';
+    html += '<div class="card"><h2 style="margin:0 0 10px; font-size:15px;">Progresión · 4 semanas</h2>' +
       '<div style="font-size:13px; color:var(--dim); line-height:1.6;">' +
       '<b style="color:var(--txt);">Semana 1:</b> peso con el que llegás al rango bajo dejando 2 repes en reserva. Anotá todo.<br>' +
       '<b style="color:var(--txt);">Semana 2:</b> mismo peso, sumá 1-2 repes por serie.<br>' +
@@ -484,6 +495,11 @@
   }
 
   elRoutine.addEventListener("change", function (ev) {
+    if (ev.target.classList.contains("plan-select")) {
+      save(K_PLAN, ev.target.value);
+      renderRoutine();
+      return;
+    }
     if (!ev.target.classList.contains("variant-select")) return;
     var exEl = ev.target.closest(".ex");
     var slot = exEl.dataset.slot;
